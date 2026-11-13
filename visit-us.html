@@ -253,8 +253,17 @@ header.menu-open .mark{color:var(--ivory)}
 @media(min-width:700px){.hero h1 .ln{white-space:nowrap}}
 .mapsec .wrap{padding-block:clamp(4rem,8vw,7rem)}
 .mapsec h2 em{font-style:italic;color:var(--olive-2)}
-.mapbox{margin-top:2.5rem;background:var(--cream)}
-.mapbox iframe{display:block;width:100%;height:clamp(22rem,50vw,34rem);border:0}
+.mapbox{position:relative;margin-top:2.5rem;background:var(--cream);height:clamp(22rem,50vw,34rem);overflow:hidden}
+.mapbox iframe{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;transition:opacity .8s ease}
+.mapbox.loaded iframe{opacity:1}
+.mapph{position:absolute;inset:0;display:grid;place-items:center;transition:opacity .8s ease .1s}
+.mapph svg{position:absolute;inset:0;width:100%;height:100%}
+.mapbox.loaded .mapph{opacity:0;pointer-events:none}
+.mapload{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:.9rem;margin-top:7rem;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--olive);background:rgba(246,240,226,.82);padding:1rem 1.6rem}
+.spin{width:2.6rem;height:2.6rem;border:2px solid rgba(47,58,34,.2);border-top-color:var(--olive);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.msg-slow{display:none}.mapbox.slow .msg-load,.mapbox.slow .spin{display:none}.mapbox.slow .msg-slow{display:block}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}.mapbox iframe,.mapph{transition:none}}
 /* aromatic oils showcase (products page) */
 .arom .wrap{padding-block:clamp(4rem,9vw,8rem)}
 .arom h2{font-size:clamp(2.2rem,5.4vw,5rem)}
@@ -315,7 +324,25 @@ header.menu-open .mark .lg-g{display:none}
     <p class="label rv">Στον χάρτη</p>
     <h2 id="map-h" style="font-size:clamp(2.2rem,5vw,4.5rem)"><span class="ln"><span>Βρείτε μας</span></span><span class="ln" style="--d:.12s"><span>στο <em>Κανάλι.</em></span></span></h2>
     <div class="mapbox rv">
-      <iframe title="Χάρτης Google: VGK Farmers Market, Κανάλι Πρέβεζας" src="https://www.google.com/maps?q=VGK+Farmers+Market+Kanali+Preveza&amp;hl=el&amp;z=15&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+      <div class="mapph" aria-hidden="true">
+        <svg viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <rect width="800" height="400" fill="#ece3cd"/>
+          <path d="M-20 300 C120 260 220 330 360 290 S620 240 820 280 L820 420 L-20 420Z" fill="#dfd3b4"/>
+          <path d="M520 -20 C560 60 640 70 700 140 S780 230 820 250 L820 -20Z" fill="#d9d7b2"/>
+          <path d="M-20 120 C80 90 150 140 260 110 S420 40 520 70" fill="none" stroke="#f6f0e2" stroke-width="14" stroke-linecap="round"/>
+          <path d="M120 -20 C150 90 230 160 250 260 S330 380 360 420" fill="none" stroke="#f6f0e2" stroke-width="12" stroke-linecap="round"/>
+          <path d="M-20 215 L820 175" fill="none" stroke="#f6f0e2" stroke-width="9" stroke-linecap="round"/>
+          <path d="M420 -20 L470 420" fill="none" stroke="#f6f0e2" stroke-width="8" stroke-linecap="round"/>
+          <path d="M600 420 C610 330 700 300 820 330" fill="none" stroke="#f6f0e2" stroke-width="8" stroke-linecap="round"/>
+          <path d="M-20 60 L300 200 M300 200 L560 330" fill="none" stroke="#e4d9bd" stroke-width="3"/>
+          <path d="M610 60 L820 130 M650 200 L820 200" fill="none" stroke="#e4d9bd" stroke-width="3"/>
+          <circle cx="440" cy="190" r="26" fill="#9a6b45" opacity=".15"/>
+          <path d="M440 214 C424 190 418 180 418 168 a22 22 0 1 1 44 0 C462 180 456 190 440 214Z" fill="#9a6b45"/>
+          <circle cx="440" cy="168" r="8" fill="#f6f0e2"/>
+        </svg>
+        <div class="mapload"><span class="spin"></span><span class="msg-load">Φόρτωση χάρτη</span><span class="msg-slow">Ο χάρτης αργεί να φορτώσει</span></div>
+      </div>
+      <iframe title="Χάρτης Google: VGK Farmers Market, Κανάλι Πρέβεζας" data-src="https://www.google.com/maps?q=VGK+Farmers+Market+Kanali+Preveza&amp;hl=el&amp;z=15&amp;output=embed" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
     </div>
     <a class="btn dark cta rv" href="https://www.google.com/maps/search/?api=1&amp;query=VGK+Farmers+Market+Kanali+Preveza" target="_blank" rel="noopener">Άνοιγμα στους Χάρτες Google <span aria-hidden="true">→</span></a>
   </div>
@@ -396,6 +423,16 @@ header.menu-open .mark .lg-g{display:none}
       });
     })(h1);
     requestAnimationFrame(function(){ requestAnimationFrame(function(){ h1.classList.add('go'); }); });
+  }
+
+  // map: set the source after the page has loaded, fade it in over the placeholder when ready
+  var mf = document.querySelector('.mapbox iframe');
+  if (mf) {
+    var mbox = mf.parentElement;
+    mf.addEventListener('load', function(){ if (mf.getAttribute('src')) mbox.classList.add('loaded'); });
+    var startMap = function(){ mf.src = mf.dataset.src; };
+    if (document.readyState === 'complete') startMap(); else addEventListener('load', startMap);
+    setTimeout(function(){ if (!mbox.classList.contains('loaded')) mbox.classList.add('slow'); }, 12000);
   }
 
   // reveals
